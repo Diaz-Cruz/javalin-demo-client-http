@@ -3,7 +3,7 @@
 
 # El comando FROM indica la imagen base.
 # openjdk:11.0.7-jre-slim-buster es una imagen de Java 11 lo mas ligera posible
-FROM openjdk:11.0.7-jre-slim-buster
+FROM eclipse-temurin:21-jre-noble
 
 # Quien mantiene la versión.
 LABEL maintainer="Carlos Camacho <ca.camacho@ce.pucmm.edu.do>"
