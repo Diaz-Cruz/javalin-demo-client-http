@@ -3,7 +3,6 @@ package edu.pucmm.eict;
 import edu.pucmm.eict.controladores.*;
 import io.javalin.Javalin;
 import io.javalin.http.staticfiles.Location;
-import io.javalin.plugin.bundled.RouteOverviewPlugin;
 import io.javalin.rendering.template.JavalinThymeleaf;
 
 import java.text.SimpleDateFormat;
@@ -13,30 +12,30 @@ import static io.javalin.apibuilder.ApiBuilder.*;
 
 public class Main {
 
-
     public static void main(String[] args) {
-        //Ejemplo hola mundo
-        String mensaje = "Hola Mundo en Javalin :-D";
-        System.out.println(mensaje);
+        System.out.println("Hola Mundo en Javalin 7 :-D");
 
-        //Creando la instancia del servidor y configurando.
-        Javalin app = Javalin.create(config ->{
-            //configurando los documentos estaticos.
+        /**
+         * En Javalin 7 TODAS las rutas y manejadores deben registrarse
+         * dentro del bloque Javalin.create() antes de llamar a start().
+         */
+        Javalin app = Javalin.create(config -> {
+
+            // Archivos estáticos servidos desde /publico en el classpath
             config.staticFiles.add(staticFileConfig -> {
                 staticFileConfig.hostedPath = "/";
                 staticFileConfig.directory = "/publico";
                 staticFileConfig.location = Location.CLASSPATH;
-                staticFileConfig.precompress=false;
-                staticFileConfig.aliasCheck=null;
+                staticFileConfig.aliasCheck = null;
             });
 
-            //Confifgurar el sistema de plantilla por defecto.
+            // Motor de plantillas por defecto: Thymeleaf (usado en /crud-simple y /thymeleaf)
             config.fileRenderer(new JavalinThymeleaf());
 
-            //
-            config.router.apiBuilder(() -> {
-                path("/api",() -> {
+            // Rutas del API REST (/api/estudiante) y CRUD tradicional (/crud-simple)
+            config.routes.apiBuilder(() -> {
 
+                path("/api", () -> {
                     path("/estudiante", () -> {
                         get(ApiControlador::listarEstudiantes);
                         post(ApiControlador::crearEstudiante);
@@ -46,79 +45,74 @@ public class Main {
                             delete(ApiControlador::eliminarEstudiante);
                         });
                     });
-
                 });
 
                 /**
-                 * Las clases que implementan el sistema de plantilla están agregadas en PlantillasControlador.
+                 * CRUD con plantillas Thymeleaf (flujo petición-respuesta tradicional).
                  * http://localhost:7000/crud-simple/listar
                  */
                 path("/crud-simple/", () -> {
-                    get(ctx -> {
-                        ctx.redirect("/crud-simple/listar");
-                    });
-                    get("/listar",CrudTradicionalControlador::listar);
-                    get("/crear",CrudTradicionalControlador::crearEstudianteForm);
-                    post("/crear",CrudTradicionalControlador::procesarCreacionEstudiante);
-                    get("/visualizar/{matricula}",CrudTradicionalControlador::visualizarEstudiante);
-                    get("/editar/{matricula}",CrudTradicionalControlador::editarEstudianteForm);
-                    post("/editar",CrudTradicionalControlador::procesarEditarEstudiante);
-                    get("/eliminar/{matricula}",CrudTradicionalControlador::eliminarEstudiante);
+                    get(ctx -> ctx.redirect("/crud-simple/listar"));
+                    get("/listar", CrudTradicionalControlador::listar);
+                    get("/crear", CrudTradicionalControlador::crearEstudianteForm);
+                    post("/crear", CrudTradicionalControlador::procesarCreacionEstudiante);
+                    get("/visualizar/{matricula}", CrudTradicionalControlador::visualizarEstudiante);
+                    get("/editar/{matricula}", CrudTradicionalControlador::editarEstudianteForm);
+                    post("/editar", CrudTradicionalControlador::procesarEditarEstudiante);
+                    get("/eliminar/{matricula}", CrudTradicionalControlador::eliminarEstudiante);
                 });
-
             });
 
-            config.registerPlugin(new RouteOverviewPlugin());
+            // Endpoint raíz
+            config.routes.get("/", ctx -> ctx.result("Hola Mundo en Javalin 7 :-D"));
+
+            // Endpoint auxiliar para los ejemplos de HTML5 (lee la hora del servidor)
+            config.routes.get("/fecha", ctx ->
+                ctx.result(new SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(new Date()))
+            );
+
+            // Header requerido por los navegadores para Service Workers servidos desde el classpath
+            config.routes.after(ctx -> {
+                if (ctx.path().equalsIgnoreCase("/serviceworkers.js")) {
+                    ctx.header("Content-Type", "application/javascript");
+                    ctx.header("Service-Worker-Allowed", "/");
+                }
+            });
+
+            // Conceptos básicos del protocolo HTTP (before, after, verbos, cabeceras)
+            new ConceptoBasicosControlador(config).aplicarRutas();
+
+            // Recepción de datos: query params, path params, body form-data
+            new RecibirDatosControlador(config).aplicarRutas();
+
+            // Cookies y sesiones HTTP
+            new CookiesSesionesControlador(config).aplicarRutas();
+
+            // Zona protegida con sesión (autenticación clásica sin roles)
+            new ZonaAdminClasica(config).aplicarRutas();
+
+            // Manejo de excepciones y códigos de error HTTP
+            new ExcepcionesControlador(config).aplicarRutas();
+
+            // Plantillas: Thymeleaf, FreeMarker y Velocity
+            new PlantillasControlador(config).aplicarRutas();
+
+            // Zona protegida con roles (RBAC)
+            new ZonaAdminConRoles(config).aplicarRutas();
+
+            // Resumen visual de todas las rutas registradas → http://localhost:7000/routes
+            config.bundledPlugins.enableRouteOverview("/routes");
+
         });
 
-        //
         app.start(getHerokuAssignedPort());
-
-        //creando el manejador
-        app.get("/", ctx -> ctx.result("Hola Mundo en Javalin :-D"));
-
-        //aplicando los diferentes conceptos.
-        new ConceptoBasicosControlador(app).aplicarRutas();
-        //aplicando las rutas para el procesamiento de los datos.
-        new RecibirDatosControlador(app).aplicarRutas();
-        //ejemplos de cookies y sesiones.
-        new CookiesSesionesControlador(app).aplicarRutas();
-        //ejemplo de manejo de sesiones y seguridad clasica.
-        new ZonaAdminClasica(app).aplicarRutas();
-        //manejo de codigo de errores y excepciones
-        new ExcepcionesControlador(app).aplicarRutas();
-        //Manejo de plantillas.
-        new PlantillasControlador(app).aplicarRutas();
-        //Concepto de seguridad con roles.
-        new ZonaAdminConRoles(app).aplicarRutas();
-
-        //Endpoint ejemplos html5.
-        app.get("/fecha", ctx -> {
-            ctx.result(""+new SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(new Date()));
-        });
-
-        //Filtro para enviar el header de validación
-        app.after(ctx -> {
-            if(ctx.path().equalsIgnoreCase("/serviceworkers.js")){
-                System.out.println("Enviando el header de seguridad para el Service Worker");
-                ctx.header("Content-Type","application/javascript");
-                ctx.header("Service-Worker-Allowed", "/");
-            }
-
-        });
-
     }
 
     /**
-     * Metodo para indicar el puerto en Heroku
-     * @return
+     * Devuelve el puerto asignado por Heroku o 7000 en desarrollo local.
      */
     static int getHerokuAssignedPort() {
-        ProcessBuilder processBuilder = new ProcessBuilder();
-        if (processBuilder.environment().get("PORT") != null) {
-            return Integer.parseInt(processBuilder.environment().get("PORT"));
-        }
-        return 7000; //Retorna el puerto por defecto en caso de no estar en Heroku.
+        String port = new ProcessBuilder().environment().get("PORT");
+        return port != null ? Integer.parseInt(port) : 7000;
     }
-
 }

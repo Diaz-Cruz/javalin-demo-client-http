@@ -1,120 +1,113 @@
 package edu.pucmm.eict.controladores;
 
-import io.javalin.Javalin;
+import io.javalin.config.JavalinConfig;
 import io.javalin.http.Context;
 
+/**
+ * Demuestra los conceptos básicos del protocolo HTTP:
+ * manejadores before/after, los distintos verbos HTTP y cómo leer
+ * y escribir cabeceras en la trama de petición/respuesta.
+ */
 public class ConceptoBasicosControlador {
 
-    private Javalin app;
+    private final JavalinConfig config;
 
-    public ConceptoBasicosControlador(Javalin app){
-        this.app = app;
+    public ConceptoBasicosControlador(JavalinConfig config) {
+        this.config = config;
     }
 
-    public void aplicarRutas(){
+    public void aplicarRutas() {
+
         /**
-         * Manejador que se aplica todas las llamadas que sean realizada.
-         * Notar la ausencia del path.
+         * Manejador before que se aplica a TODAS las llamadas.
+         * Se ejecuta antes del handler del endpoint.
          */
-        app.before(ctxContextContext -> {
-            //
-            String mensaje = String.format("Manejador before aplicando a todas las llamadas: %s, Contexto: %s, Metodo: %s",
-                    ctxContextContext.req().getRemoteHost(),
-                    ctxContextContext.path(),
-                    ctxContextContext.req().getMethod());
-            //
+        config.routes.before(ctx -> {
+            String mensaje = String.format(
+                "Manejador before (global): host=%s, path=%s, método=%s",
+                ctx.req().getRemoteHost(),
+                ctx.path(),
+                ctx.req().getMethod()
+            );
             System.out.println(mensaje);
         });
 
         /**
-         * Manejador que se aplica de la ruta /isc415
+         * Manejador before acotado al path /isc415.
+         * Permite establecer variables de contexto para el endpoint.
          */
-        app.before("/isc415", ctxContextContext -> {
-            //
-            String mensaje = String.format("Manejador before aplicando en el Contexto: %s, Metodo: %s",
-                    ctxContextContext.req().getRequestURI(),
-                    ctxContextContext.req().getMethod());
-            //aplicando cambios o validaciones.
-            ctxContextContext.attribute("mi-variable", "Hola Mundo"); //variable en el contexto de petición
-            //
+        config.routes.before("/isc415", ctx -> {
+            String mensaje = String.format(
+                "Manejador before (/isc415): uri=%s, método=%s",
+                ctx.req().getRequestURI(),
+                ctx.req().getMethod()
+            );
+            ctx.attribute("mi-variable", "Hola Mundo"); // variable disponible en el handler
             System.out.println(mensaje);
         });
 
         /**
-         * Handler sobre el endpoint, en al variable ctxContext.
+         * Handler GET para /isc415.
+         * Demuestra cómo leer/escribir cabeceras HTTP y el método del request.
+         * http://localhost:7000/isc415
          */
-        app.get("/isc415", ctxContextContext -> {
-            String metodo = ctxContextContext.req().getMethod(); //la información del encapsulada del cliente.
-            metodo = ctxContextContext.method().name();
-            ctxContextContext.res().setHeader("asignatura", "ISC-415");
-            ctxContextContext.header("otro-header", "Mi header enviado");
-            //La forma utilizando HttpServletResponse
-            /*PrintWriter printWriter = new PrintWriter(ctxContext.res.getOutputStream());
-            printWriter.println("Endpoint "+ctxContext.req.getRequestURI()+" -  Metodo: "+metodo);
-            printWriter.flush();
-            printWriter.close();*/
-            ctxContextContext.result("Endpoint "+ctxContextContext.req().getRequestURI()+" -  Metodo: "+metodo+" - Variable: "+ctxContextContext.attribute("mi-variable"));
+        config.routes.get("/isc415", ctx -> {
+            String metodo = ctx.method().name();
+            ctx.res().setHeader("asignatura", "ISC-415");
+            ctx.header("otro-header", "Mi header enviado");
+            ctx.result("Endpoint " + ctx.req().getRequestURI()
+                + " - Método: " + metodo
+                + " - Variable: " + ctx.attribute("mi-variable"));
         });
 
         /**
-         * Handler despues de cualquier llamada, siempre que no exista un error.
-         * nota la ausencia de path
+         * Manejador after para TODAS las llamadas.
+         * Se ejecuta después del handler del endpoint.
          */
-        app.after(ctxContextContext -> {
-            String mensaje = String.format("Handler after para cualquier llamada - Usuario: %s, Contexto: %s",
-                    ctxContextContext.req().getRemoteHost(),
-                    ctxContextContext.contextPath()
-                    );
+        config.routes.after(ctx -> {
+            String mensaje = String.format(
+                "Handler after (global): host=%s, contextPath=%s",
+                ctx.req().getRemoteHost(),
+                ctx.contextPath()
+            );
             System.out.println(mensaje);
         });
 
         /**
-         * Aplica luego de la respuesta del endpoint del contexto /isc415
+         * Manejador after acotado al path /isc415.
          */
-        app.after("/isc415", ctxContext -> {
-            //
-            String mensaje = String.format("Manejador after aplicando en el Contexto: %s, Metodo: %s",
-                    ctxContext.req().getRequestURI(),
-                    ctxContext.req().getMethod());
-            //aplicando cambios o validaciones.
-            ctxContext.header("incluido-after","fue ejecutando en bloque after");
-            //ctxContext.header("nombre"); ctxContext.req.getHeader("nombre") desde el cliente.
-            //ctxContext.header("otro-header", ctxContext.res.getHeader("otro-header").toUpperCase()+" - Incluir otra cosa....");
-            //
+        config.routes.after("/isc415", ctx -> {
+            String mensaje = String.format(
+                "Manejador after (/isc415): uri=%s, método=%s",
+                ctx.req().getRequestURI(),
+                ctx.req().getMethod()
+            );
+            ctx.header("incluido-after", "fue ejecutando en bloque after");
             System.out.println(mensaje);
         });
 
         /**
-         * la ruta (path) puede ser la misma siempre y cuando el verbo cambie.
-         * Ver los diferentes ejemplos.
+         * Los diferentes verbos HTTP pueden compartir el mismo path.
+         * Prueba con: POST, PUT, DELETE, OPTIONS, PATCH, HEAD en /isc415
          */
-        app.post("/isc415",this::procesamiento);
-
-        app.put("/isc415", this::procesamiento);
-
-        app.delete("/isc415", this::procesamiento);
-
-        app.options("/isc415", this::procesamiento);
-
-        app.patch("/isc415", this::procesamiento);
-
-        app.head("/isc415", this::procesamiento);
+        config.routes.post("/isc415", this::procesamiento);
+        config.routes.put("/isc415", this::procesamiento);
+        config.routes.delete("/isc415", this::procesamiento);
+        config.routes.options("/isc415", this::procesamiento);
+        config.routes.patch("/isc415", this::procesamiento);
+        config.routes.head("/isc415", this::procesamiento);
 
         /**
-         * bloque retornar el mimetype del archivo para el cache.
+         * Devuelve el MIME type correcto para el manifiesto de caché del ejemplo de Service Worker.
          */
-        app.after("/html5/sinconexion.appcache", ctxContext -> {
-            System.out.println("Llamando el cache....");
-            ctxContext.contentType("text/cache-manifest");
+        config.routes.after("/html5/sinconexion.appcache", ctx -> {
+            System.out.println("Enviando cabecera del manifiesto de caché...");
+            ctx.contentType("text/cache-manifest");
         });
-
     }
 
-    /**
-     *
-     * @param ctxContext
-     */
-    private void procesamiento(Context ctxContext){
-        ctxContext.result("Trabajando por el metodo: "+ctxContext.method()+" - Header[profesor] = "+ctxContext.header("profesor"));
+    private void procesamiento(Context ctx) {
+        ctx.result("Trabajando con el método: " + ctx.method()
+            + " - Header[profesor] = " + ctx.header("profesor"));
     }
 }

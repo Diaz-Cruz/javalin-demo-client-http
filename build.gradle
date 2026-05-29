@@ -1,65 +1,60 @@
 plugins {
     id 'java'
     id 'application'
-    id 'com.github.johnrengelman.shadow' version '7.1.2'
+    id 'com.gradleup.shadow' version '9.0.0'
 }
 
 group 'edu.pucmm.eict'
 version '1.0-SNAPSHOT'
 
 java {
-    sourceCompatibility = '21'
+    sourceCompatibility = '25'
+    targetCompatibility = '25'
 }
 
-mainClassName='edu.pucmm.eict.Main'
+application {
+    mainClass = 'edu.pucmm.eict.Main'
+}
 
 repositories {
     mavenCentral()
-    maven{
-        url "https://maven.reposilite.com/snapshots"
-    }
 }
 
 dependencies {
-    //Libreria test
+    // Test
     testImplementation platform('org.junit:junit-bom:5.10.0')
     testImplementation 'org.junit.jupiter:junit-jupiter'
 
-    //dependencia de Javalin
-    implementation 'io.javalin:javalin:6.1.3'
+    // Javalin 7
+    implementation 'io.javalin:javalin:7.2.2'
 
-    //manejo de log.
-    implementation("org.slf4j:slf4j-simple:2.0.10")
+    // Logging
+    implementation 'org.slf4j:slf4j-simple:2.0.10'
 
-    //libreria jsoup.
-    implementation group: 'org.jsoup', name: 'jsoup', version: '1.15.3'
+    // Jsoup
+    implementation 'org.jsoup:jsoup:1.15.3'
 
-    //Procesamiento JSON.
-    implementation("com.fasterxml.jackson.core:jackson-core:2.15.2")
-    implementation('com.fasterxml.jackson.core:jackson-databind:2.15.2')
-    implementation("com.fasterxml.jackson.core:jackson-annotations:2.15.2")
+    // JSON (Jackson)
+    implementation 'com.fasterxml.jackson.core:jackson-core:2.15.2'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.15.2'
+    implementation 'com.fasterxml.jackson.core:jackson-annotations:2.15.2'
 
-    // En la versión 5.3.X separaron las clases del renderizado en otro proyecto
-    implementation "io.javalin:javalin-rendering:6.1.3"
-
-    //sistemas de plantilla:
-    implementation 'org.freemarker:freemarker:2.3.32'
-    implementation 'org.thymeleaf:thymeleaf:3.1.1.RELEASE'
-    implementation 'org.apache.velocity:velocity-engine-core:2.3'
-
+    // Sistemas de plantilla: cada módulo empaqueta su propio motor
+    implementation 'io.javalin:javalin-rendering-thymeleaf:7.2.2'
+    implementation 'io.javalin:javalin-rendering-freemarker:7.2.2'
+    implementation 'io.javalin:javalin-rendering-velocity:7.2.2'
 }
 
-shadowJar{
-    archiveBaseName.set("app")
+shadowJar {
+    archiveBaseName.set('app')
     archiveClassifier.set('')
     archiveVersion.set('')
 }
 
 /**
- * tarea necesaria para heroku si optamos por la tarea de Shadowjar
- * en el archivo Procfile debe estar el siguiente comando:
- * web: java -jar build/libs/app.jar
+ * Tarea necesaria para Heroku: genera el fat-jar mediante shadowJar.
+ * En el Procfile debe estar: web: java -jar build/libs/app.jar
  */
-task stage {
+tasks.register('stage') {
     dependsOn shadowJar
 }

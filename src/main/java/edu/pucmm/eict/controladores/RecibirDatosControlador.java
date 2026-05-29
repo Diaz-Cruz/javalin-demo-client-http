@@ -1,90 +1,88 @@
 package edu.pucmm.eict.controladores;
 
 import edu.pucmm.eict.util.BaseControlador;
-import io.javalin.Javalin;
+import io.javalin.config.JavalinConfig;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
+/**
+ * Demuestra las distintas formas de recibir datos en una petición HTTP:
+ * query parameters, path parameters y body (form data).
+ */
 public class RecibirDatosControlador extends BaseControlador {
 
-    public RecibirDatosControlador(Javalin app) {
-        super(app);
+    public RecibirDatosControlador(JavalinConfig config) {
+        super(config);
     }
 
     @Override
     public void aplicarRutas() {
+
         /**
-         * Ejemplo para leer por parametros de consulta (query param)
+         * Parámetros de consulta (query params) en la URL.
          * http://localhost:7000/parametros?matricula=20011126&nombre=Carlos%20Camacho
          */
-        app.get("/parametros", ctx -> {
+        config.routes.get("/parametros", ctx -> {
             List<String> salida = new ArrayList<>();
-            salida.add("Mostrando todos los parametros enviados:");
-            //listando la informacion.
-            ctx.queryParamMap().forEach((key, lista) -> {
-                salida.add(String.format("[%s] = [%s]", key, String.join(",", lista)));
-            });
-            //
+            salida.add("Mostrando todos los parámetros enviados:");
+            ctx.queryParamMap().forEach((key, lista) ->
+                salida.add(String.format("[%s] = [%s]", key, String.join(",", lista)))
+            );
             ctx.result(String.join("\n", salida));
         });
 
         /**
-         * Ejemplo de parametros como parte de la URL, notar los ':' en el path.
+         * Parámetros como parte de la URL (path params).
          * http://localhost:7000/parametros/20011136/
          */
-        app.get("/parametros/{matricula}/", ctx -> {
-            //TODO: metodo para validar matricula..
-            ctx.result("El Estudiante tiene la matricula: "+ctx.pathParam("matricula"));
-        });
+        config.routes.get("/parametros/{matricula}/", ctx ->
+            ctx.result("El estudiante tiene la matrícula: " + ctx.pathParam("matricula"))
+        );
 
         /**
-         * Ejemplo de parametros como parte de la URL, notar los ':' en el path.
-         * Puedo hacer combinaciones
+         * Combinación de path params.
          * http://localhost:7000/parametros/20011136/nombre/carloscamacho
          */
-        app.get("/parametros/{matricula}/nombre/{nombre}", ctx -> {
-            ctx.result("El Estudiante tiene la matricula: "+ctx.pathParam("matricula")+" - nombre: "+ctx.pathParam("nombre"));
-        });
+        config.routes.get("/parametros/{matricula}/nombre/{nombre}", ctx ->
+            ctx.result("Matrícula: " + ctx.pathParam("matricula")
+                + " - Nombre: " + ctx.pathParam("nombre"))
+        );
 
-        app.get("/parametros/{para1}/{para2}/{para3}", ctx -> {
-            ctx.result("hhhhh");
-        });
+        config.routes.get("/parametros/{para1}/{para2}/{para3}", ctx ->
+            ctx.result("hhhhh")
+        );
 
-        //Llamada ambigua... puede que ejecute como que no.
-        app.get("/parametros/{para4}/{para5}/{para6}", ctx -> {
-            ctx.result("kkkkkk");
-        });
+        // Ruta ambigua: puede ejecutarse o no dependiendo del orden de registro
+        config.routes.get("/parametros/{para4}/{para5}/{para6}", ctx ->
+            ctx.result("kkkkkk")
+        );
 
         /**
-         * Ejemplo de información en el cuerpo del mensaje
-         * http://localhost:7000/formulario.html para el formulario
+         * Datos en el cuerpo del mensaje (body / form data).
+         * Utilizar el formulario en: http://localhost:7000/formulario.html
          */
-        app.post("/parametros", ctx -> {
-            System.out.println("El tipo de datos recibido: "+ctx.header("Content-Type")+ "Matricula:"+ctx.queryParam("matricula"));
+        config.routes.post("/parametros", ctx -> {
+            System.out.println("Content-Type: " + ctx.header("Content-Type")
+                + " - Matrícula (query): " + ctx.queryParam("matricula"));
             List<String> salida = new ArrayList<>();
-            salida.add("Mostrando todos la informacion enviada en el cuerpo:");
-            //listando la informacion.
-            ctx.formParamMap().forEach((key, lista) -> {
-                salida.add(String.format("[%s] = [%s]", key, String.join(",", lista)));
-            });
-            //
+            salida.add("Mostrando información enviada en el cuerpo:");
+            ctx.formParamMap().forEach((key, lista) ->
+                salida.add(String.format("[%s] = [%s]", key, String.join(",", lista)))
+            );
             ctx.result(String.join("\n", salida));
         });
 
         /**
-         * En cualquier situación puedo los encabezados de la trama HTTP.
+         * Leer todos los encabezados HTTP enviados por el cliente.
          * http://localhost:7000/leerheaders
          */
-        app.get("leerheaders", ctx -> {
+        config.routes.get("leerheaders", ctx -> {
             List<String> salida = new ArrayList<>();
-            salida.add("Mostrando la informacion enviada en los headers:");
-            //listando la informacion.
-            ctx.headerMap().forEach((key, valor) -> {
-                salida.add(String.format("[%s] = [%s]", key, String.join(",", valor)));
-            });
-            //
+            salida.add("Encabezados enviados en la trama HTTP:");
+            ctx.headerMap().forEach((key, valor) ->
+                salida.add(String.format("[%s] = [%s]", key, String.join(",", valor)))
+            );
             ctx.result(String.join("\n", salida));
         });
     }
