@@ -1,53 +1,55 @@
 package edu.pucmm.eict.controladores;
 
 import edu.pucmm.eict.util.BaseControlador;
-import io.javalin.Javalin;
+import io.javalin.config.JavalinConfig;
 import io.javalin.http.NotFoundResponse;
 import io.javalin.http.UnauthorizedResponse;
 
+/**
+ * Demuestra el manejo de excepciones y códigos de error HTTP en Javalin.
+ * Referencia de códigos HTTP: https://developer.mozilla.org/es/docs/Web/HTTP/Status
+ */
 public class ExcepcionesControlador extends BaseControlador {
 
-    public ExcepcionesControlador(Javalin app) {
-        super(app);
+    public ExcepcionesControlador(JavalinConfig config) {
+        super(config);
     }
 
     @Override
     public void aplicarRutas() {
 
-        /**
-         * Javalin implementa respuestas automatica según el el codigo del protocolo HTTP
-         * que deseos tabajar: https://developer.mozilla.org/es/docs/Web/HTTP/Status
-         */
-        // ver el listado completo en:
-        // https://javalin.io/documentation#default-responses
-        // ir a http://localhost:7000/excepciones/ruta-no-encontrada
-        app.get("/excepciones/ruta-no-encontrada", ctx -> {
+        // Lanza una excepción 404 Not Found
+        // http://localhost:7000/excepciones/ruta-no-encontrada
+        config.routes.get("/excepciones/ruta-no-encontrada", ctx -> {
             throw new NotFoundResponse();
         });
 
-        // ir a http://localhost:7000/excepciones/ruta-sin-permisos
-        app.get("/excepciones/ruta-sin-permisos", ctx -> {
+        // Lanza una excepción 401 Unauthorized
+        // http://localhost:7000/excepciones/ruta-sin-permisos
+        config.routes.get("/excepciones/ruta-sin-permisos", ctx -> {
             throw new UnauthorizedResponse();
         });
 
-        //ir a http://localhost:7000/excepciones/provocando-error
-        app.get("/excepciones/provocando-error", ctx -> {
-            ctx.result("Error: "+Integer.parseInt("gagdagsd"));
-        });
-
-
-        /**
-         * Para el manejo de excepciones y codigo de errores
-         */
-        app.exception(NumberFormatException.class, (exception, ctx) -> {
-            ctx.html("Ocurrió un error en la conversacion numerica: "+exception.getLocalizedMessage());
-        });
+        // Provoca un NumberFormatException que es capturado por el handler de excepciones
+        // http://localhost:7000/excepciones/provocando-error
+        config.routes.get("/excepciones/provocando-error", ctx ->
+            ctx.result("Error: " + Integer.parseInt("texto-invalido"))
+        );
 
         /**
-         * Solo aplica cuando venga para vistas html.
+         * Manejador global de NumberFormatException.
+         * Intercepta cualquier NumberFormatException lanzada en cualquier endpoint.
          */
-        app.error(404,"text/html", ctx -> {
-            ctx.html("<h1>Recurso consultado no existe... Favor verificar...</h1>");
-        });
+        config.routes.exception(NumberFormatException.class, (exception, ctx) ->
+            ctx.html("Ocurrió un error en la conversión numérica: " + exception.getLocalizedMessage())
+        );
+
+        /**
+         * Manejador de error 404 para respuestas HTML.
+         * Solo se activa cuando el cliente acepta text/html.
+         */
+        config.routes.error(404, "text/html", ctx ->
+            ctx.html("<h1>El recurso consultado no existe. Favor verificar la URL.</h1>")
+        );
     }
 }

@@ -2,16 +2,12 @@ package edu.pucmm.eict.controladores;
 
 import edu.pucmm.eict.encapsulaciones.Estudiante;
 import edu.pucmm.eict.servicios.FakeServices;
-import edu.pucmm.eict.util.BaseControlador;
-import io.javalin.Javalin;
 import io.javalin.http.Context;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import static io.javalin.apibuilder.ApiBuilder.*;
 
 /**
  * Representa las rutas para manejar las operaciones de petición - respuesta.
@@ -43,7 +39,7 @@ public class CrudTradicionalControlador  {
 
     public static void procesarCreacionEstudiante(@NotNull Context ctx) throws Exception {
         //obteniendo la información enviada.
-        int matricula = ctx.formParamAsClass("matricula", Integer.class).get();
+        int matricula = ctx.formParamAsClass("matricula", Integer.class).required().get();
         String nombre = ctx.formParam("nombre");
         String carrera = ctx.formParam("carrera");
         //
@@ -54,7 +50,7 @@ public class CrudTradicionalControlador  {
     }
 
     public static void visualizarEstudiante(@NotNull Context ctx) throws Exception {
-        Estudiante estudiante = fakeServices.getEstudiantePorMatricula(ctx.pathParamAsClass("matricula", Integer.class).get());
+        Estudiante estudiante = fakeServices.getEstudiantePorMatricula(ctx.pathParamAsClass("matricula", Integer.class).required().get());
         //
         Map<String, Object> modelo = new HashMap<>();
         modelo.put("titulo", "Formulario Visaulizar Estudiante "+estudiante.getMatricula());
@@ -67,7 +63,7 @@ public class CrudTradicionalControlador  {
     }
 
     public static void editarEstudianteForm(@NotNull Context ctx) throws Exception {
-        Estudiante estudiante = fakeServices.getEstudiantePorMatricula(ctx.pathParamAsClass("matricula", Integer.class).get());
+        Estudiante estudiante = fakeServices.getEstudiantePorMatricula(ctx.pathParamAsClass("matricula", Integer.class).required().get());
         //
         Map<String, Object> modelo = new HashMap<>();
         modelo.put("titulo", "Formulario Editar Estudiante "+estudiante.getMatricula());
@@ -80,7 +76,7 @@ public class CrudTradicionalControlador  {
 
     public static void procesarEditarEstudiante(@NotNull Context ctx) throws Exception {
         //obteniendo la información enviada.
-        int matricula = ctx.formParamAsClass("matricula", Integer.class).get();
+        int matricula = ctx.formParamAsClass("matricula", Integer.class).required().get();
         String nombre = ctx.formParam("nombre");
         String carrera = ctx.formParam("carrera");
         //
@@ -91,7 +87,7 @@ public class CrudTradicionalControlador  {
     }
 
     public static void eliminarEstudiante(@NotNull Context ctx) throws Exception {
-        fakeServices.eliminandoEstudiante(ctx.pathParamAsClass("matricula", Integer.class).get());
+        fakeServices.eliminandoEstudiante(ctx.pathParamAsClass("matricula", Integer.class).required().get());
         ctx.redirect("/crud-simple/");
     }
 
