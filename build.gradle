@@ -1,7 +1,6 @@
 plugins {
     id 'java'
     id 'application'
-    id 'com.gradleup.shadow' version '9.0.0'
 }
 
 group 'edu.pucmm.eict'
@@ -21,40 +20,9 @@ repositories {
 }
 
 dependencies {
-    // Test
-    testImplementation platform('org.junit:junit-bom:5.10.0')
-    testImplementation 'org.junit.jupiter:junit-jupiter'
-
-    // Javalin 7
-    implementation 'io.javalin:javalin:7.2.2'
-
-    // Logging
-    implementation 'org.slf4j:slf4j-simple:2.0.10'
-
-    // Jsoup
     implementation 'org.jsoup:jsoup:1.15.3'
-
-    // JSON (Jackson)
-    implementation 'com.fasterxml.jackson.core:jackson-core:2.15.2'
-    implementation 'com.fasterxml.jackson.core:jackson-databind:2.15.2'
-    implementation 'com.fasterxml.jackson.core:jackson-annotations:2.15.2'
-
-    // Sistemas de plantilla: cada módulo empaqueta su propio motor
-    implementation 'io.javalin:javalin-rendering-thymeleaf:7.2.2'
-    implementation 'io.javalin:javalin-rendering-freemarker:7.2.2'
-    implementation 'io.javalin:javalin-rendering-velocity:7.2.2'
 }
 
-shadowJar {
-    archiveBaseName.set('app')
-    archiveClassifier.set('')
-    archiveVersion.set('')
-}
-
-/**
- * Tarea necesaria para Heroku: genera el fat-jar mediante shadowJar.
- * En el Procfile debe estar: web: java -jar build/libs/app.jar
- */
-tasks.register('stage') {
-    dependsOn shadowJar
+run {
+    standardInput = System.in
 }
